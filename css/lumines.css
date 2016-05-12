@@ -1,0 +1,72 @@
+html, body, figure, ul, li, h1 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  text-align: inherit;
+}
+
+h1{
+  text-align: center;
+}
+
+ul {
+  width: 960px;
+  margin: 0 auto;
+  position: relative;
+  color: red;
+  z-index: -1;
+}
+
+li {
+  width: 60px;
+  height: 60px;
+  float: left;
+  list-style: none;
+  outline: 1px solid black;
+  background: gray;
+  z-index: -1;
+}
+
+div {
+  width: 60px;
+  height: 60px;
+  position: absolute;
+  z-index: 10;
+}
+
+.nostyle {
+  outline: none;
+  background: none;
+}
+
+.gameover {
+  background: transparent;
+  outline: none;
+}
+
+.cf:after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+.square-dark {
+  background: cornflowerblue;
+  outline: 1px solid black;
+}
+
+.square-light {
+  background: white;
+  outline: 1px solid black;
+}
+
+.fixed {
+  transition: all 0.25s linear;
+}
+
+.delete {
+  border: 3px solid white;
+  opacity: 0.7;
+  box-sizing: border-box;
+}
