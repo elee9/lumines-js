@@ -63,12 +63,14 @@ Block.prototype.move = function(dir) {
 
       if (valid) {
         this.squares.forEach(function(square) {
-          var oldPos = square.pos.slice();
-          square.pos[1] -= 1;
-          this.board.grid[oldPos[0]][oldPos[1]] = ".";
-          this.board.grid[square.pos[0]][square.pos[1]] = square.color;
+          if (square.active) {
+            var oldPos = square.pos.slice();
+            square.pos[1] -= 1;
+            this.board.grid[oldPos[0]][oldPos[1]] = ".";
+            this.board.grid[square.pos[0]][square.pos[1]] = square.color;
 
-          divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
+            divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
+          }
         }.bind(this));
 
 
@@ -88,18 +90,17 @@ Block.prototype.move = function(dir) {
           if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
               !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
             square.block.squares.forEach(function(otherSquare){
+              setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
               otherSquare.active = false;
             });
-            $('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');
-            square.fixed = true;
           }
         });
       }
       break;
 
     case 39:
-      var valid = true;
-      var divs = [];
+      valid = true;
+      divs = [];
       this.squares.forEach(function(square) {
         if (!this.board.validPos([square.pos[0], square.pos[1] + 1])
             || !this.board.checkPos([square.pos[0], square.pos[1] + 1 ])){
@@ -109,16 +110,18 @@ Block.prototype.move = function(dir) {
 
       if (valid) {
         this.squares.forEach(function(square) {
-          var oldPos = square.pos.slice();
-          square.pos[1] += 1;
-          this.board.grid[oldPos[0]][oldPos[1]] = ".";
-          this.board.grid[square.pos[0]][square.pos[1]] = square.color;
+          if (square.active) {
+            var oldPos = square.pos.slice();
+            square.pos[1] += 1;
+            this.board.grid[oldPos[0]][oldPos[1]] = ".";
+            this.board.grid[square.pos[0]][square.pos[1]] = square.color;
 
-          divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
+            divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
+          }
         }.bind(this));
 
 
-        var i = 0;
+        i = 0;
         this.squares.forEach(function(square, idx) {
           if (square.active) {
             divs[i].attr('pos', square.pos);
@@ -134,59 +137,20 @@ Block.prototype.move = function(dir) {
           if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
               !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
             square.block.squares.forEach(function(otherSquare){
+              setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
               otherSquare.active = false;
             });
-            $('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');
-            square.fixed = true;
           }
         });
       }
       break;
 
     case 40:
-      var valid = true;
-      var divs = [];
-      this.squares.forEach(function(square) {
-        if (!this.board.validPos([square.pos[0] + 1, square.pos[1]])
-            || !this.board.checkPos([square.pos[0] + 1, square.pos[1]])){
-            valid = false;
-        }
-      }.bind(this));
+      this.squares.forEach(function(otherSquare){
+        $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
+        otherSquare.active = false;
+      });
 
-      if (valid) {
-        this.squares.forEach(function(square) {
-          var oldPos = square.pos.slice();
-          square.pos[0] += 1;
-          this.board.grid[oldPos[0]][oldPos[1]] = ".";
-          this.board.grid[square.pos[0]][square.pos[1]] = square.color;
-
-          divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
-        }.bind(this));
-
-
-        var i = 0;
-        this.squares.forEach(function(square, idx) {
-          if (square.active) {
-            divs[i].attr('pos', square.pos);
-            var top = 60 * square.pos[0];
-            var left = 60 * square.pos[1];
-
-            divs[i].css({top: top + 'px', left: left + 'px'});
-            i += 1;
-          }
-        });
-
-        this.squares.forEach(function(square) {
-          if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
-              !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
-            square.block.squares.forEach(function(otherSquare){
-              otherSquare.active = false;
-            });
-            $('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');
-            square.fixed = true;
-          }
-        });
-      }
       break;
 
     case 68:
@@ -210,9 +174,11 @@ Block.prototype.move = function(dir) {
         }
         var newPos = [square.pos[0] + delta[0], square.pos[1] + delta[1]];
         divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
-        square.pos = newPos;
-        this.board.grid[newPos[0]][newPos[1]] = square.color;
-
+        if (square.active) {
+          this.board.grid[square.pos[0]][square.pos[1]] = '.';
+          square.pos = newPos;
+          this.board.grid[newPos[0]][newPos[1]] = square.color;
+        }
         j += 1;
       }.bind(this));
 
@@ -229,18 +195,24 @@ Block.prototype.move = function(dir) {
           i += 1;
         }
       });
-      var tempSquares = [];
 
-      tempSquares.push(this.squares[1]);
-      tempSquares.push(this.squares[3]);
-      tempSquares.push(this.squares[0]);
-      tempSquares.push(this.squares[2]);
 
+      var tempSquares = [this.squares[1], this.squares[3], this.squares[0], this.squares[2]];
       this.squares = tempSquares;
+
+      this.squares.forEach(function(square) {
+        if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
+        !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
+          square.block.squares.forEach(function(otherSquare){
+            setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
+            otherSquare.active = false;
+          });
+        }
+      });
       break;
 
     case 65:
-      var j = 0;
+      j = 0;
       divs = [];
       this.squares.forEach(function(square) {
         var delta;
@@ -260,9 +232,11 @@ Block.prototype.move = function(dir) {
         }
         var newPos = [square.pos[0] + delta[0], square.pos[1] + delta[1]];
         divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
-        square.pos = newPos;
-        this.board.grid[newPos[0]][newPos[1]] = square.color;
-
+        if (square.active) {
+          this.board.grid[square.pos[0]][square.pos[1]] = '.';
+          square.pos = newPos;
+          this.board.grid[newPos[0]][newPos[1]] = square.color;
+        }
         j += 1;
       }.bind(this));
 
@@ -279,14 +253,19 @@ Block.prototype.move = function(dir) {
           i += 1;
         }
       });
-      var tempSquares = [];
 
-      tempSquares.push(this.squares[2]);
-      tempSquares.push(this.squares[0]);
-      tempSquares.push(this.squares[3]);
-      tempSquares.push(this.squares[1]);
-
+      var tempSquares = [this.squares[2], this.squares[0], this.squares[3], this.squares[1]];
       this.squares = tempSquares;
+
+      this.squares.forEach(function(square) {
+        if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
+            !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
+          square.block.squares.forEach(function(otherSquare){
+            setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
+            otherSquare.active = false;
+          });
+        }
+      });
       break;
 
 

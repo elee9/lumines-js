@@ -81,24 +81,18 @@ Board.prototype.checkPos = function(pos) {
 
 Board.prototype.blockStep = function() {
 
+  var madeBlock = false;
+
   if (!this.block.activeCheck()) {
     this.lastBlock = $.extend({}, this.block);
     this.addSquares(this.lastBlock.squares);
     this.makeBlock();
+    madeBlock = true;
   }
 
-  if (typeof this.lastBlock === 'object') {
-    if (this.lastBlock.fixedCheck()) {
-      var toCheck = this.lastBlock.squares.slice();
-      var skipCheck = this.lastBlock.squares.slice();
-      while (toCheck.length) {
-        this.checkDelete(toCheck, skipCheck);
-      }
-      this.lastBlock = "placeholder";
-    }
+  if (!madeBlock) {
+    this.block.squares.forEach(function(square) { square.drop(); });
   }
-
-  this.block.squares.forEach(function(square) { square.blockDrop(); });
 };
 
 Board.prototype.checkDelete = function(queue, skip) {
@@ -140,7 +134,6 @@ Board.prototype.checkDelete = function(queue, skip) {
       }
     }
   }.bind(this));
-
 };
 
 Board.prototype.findSquare = function(pos) {
@@ -154,7 +147,26 @@ Board.prototype.findSquare = function(pos) {
 };
 
 Board.prototype.squareStep = function() {
-  this.squares.forEach(function(square) { square.squareDrop(); });
+  var notFixed = this.squares.filter(function(square) {
+    return !square.fixed;
+  });
+
+  notFixed.forEach(function(square) {
+    square.checkFix();
+  });
+
+  if (typeof this.lastBlock === 'object') {
+    if (this.lastBlock.fixedCheck()) {
+      var toCheck = this.lastBlock.squares.slice();
+      var skipCheck = this.lastBlock.squares.slice();
+      while (toCheck.length) {
+        this.checkDelete(toCheck, skipCheck);
+      }
+      this.lastBlock = "placeholder";
+    }
+  }
+
+  this.squares.forEach(function(square) { square.drop(); });
 };
 
 Board.prototype.move = function(dir) {

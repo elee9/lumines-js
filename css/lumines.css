@@ -62,7 +62,7 @@ div {
 }
 
 .fixed {
-  transition: all 0.25s linear;
+  transition: all 0.1s linear;
 }
 
 .delete {

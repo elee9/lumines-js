@@ -65,8 +65,8 @@
 	  this.setupGrid();
 	  this.keyBind();
 	  this.makeBlocks();
-	  this.timer = -250;
-	  this.intervalId = window.setInterval(this.step.bind(this), 250);
+	  this.timer = 0;
+	  this.intervalId = window.setInterval(this.step.bind(this), 100);
 	};
 	
 	View.prototype.setupGrid = function(){
@@ -115,18 +115,14 @@
 	  }.bind(this));
 	};
 	
-	View.prototype.render = function () {
-	
-	};
-	
 	View.prototype.step = function() {
+	
+	  this.timer += 100;
+	  this.board.squareStep();
+	
 	  if (this.timer % 1000 === 0) {
 	    this.board.blockStep();
 	  }
-	
-	  this.timer += 250;
-	  this.board.squareStep();
-	  this.render();
 	};
 	
 	module.exports = View;
@@ -219,24 +215,18 @@
 	
 	Board.prototype.blockStep = function() {
 	
+	  var madeBlock = false;
+	
 	  if (!this.block.activeCheck()) {
 	    this.lastBlock = $.extend({}, this.block);
 	    this.addSquares(this.lastBlock.squares);
 	    this.makeBlock();
+	    madeBlock = true;
 	  }
 	
-	  if (typeof this.lastBlock === 'object') {
-	    if (this.lastBlock.fixedCheck()) {
-	      var toCheck = this.lastBlock.squares.slice();
-	      var skipCheck = this.lastBlock.squares.slice();
-	      while (toCheck.length) {
-	        this.checkDelete(toCheck, skipCheck);
-	      }
-	      this.lastBlock = "placeholder";
-	    }
+	  if (!madeBlock) {
+	    this.block.squares.forEach(function(square) { square.drop(); });
 	  }
-	
-	  this.block.squares.forEach(function(square) { square.blockDrop(); });
 	};
 	
 	Board.prototype.checkDelete = function(queue, skip) {
@@ -278,7 +268,6 @@
 	      }
 	    }
 	  }.bind(this));
-	
 	};
 	
 	Board.prototype.findSquare = function(pos) {
@@ -292,7 +281,26 @@
 	};
 	
 	Board.prototype.squareStep = function() {
-	  this.squares.forEach(function(square) { square.squareDrop(); });
+	  var notFixed = this.squares.filter(function(square) {
+	    return !square.fixed;
+	  });
+	
+	  notFixed.forEach(function(square) {
+	    square.checkFix();
+	  });
+	
+	  if (typeof this.lastBlock === 'object') {
+	    if (this.lastBlock.fixedCheck()) {
+	      var toCheck = this.lastBlock.squares.slice();
+	      var skipCheck = this.lastBlock.squares.slice();
+	      while (toCheck.length) {
+	        this.checkDelete(toCheck, skipCheck);
+	      }
+	      this.lastBlock = "placeholder";
+	    }
+	  }
+	
+	  this.squares.forEach(function(square) { square.drop(); });
 	};
 	
 	Board.prototype.move = function(dir) {
@@ -332,7 +340,7 @@
 	  this.toDelete = false;
 	};
 	
-	Square.prototype.blockDrop = function() {
+	Square.prototype.drop = function() {
 	  var oldPos = this.pos.slice();
 	  if (!this.fixed) {
 	    this.pos[0] += 1;
@@ -341,10 +349,9 @@
 	  if (!this.board.checkPos([this.pos[0] + 1, this.pos[1]]) ||
 	      !this.board.validPos([this.pos[0] + 1, this.pos[1]])) {
 	    this.block.squares.forEach(function(square){
+	      setTimeout(function() {$('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');}, 550);
 	      square.active = false;
-	    }.bind(this));
-	    $('div[pos="'+ this.pos[0] + ',' + this.pos[1] +'"]').addClass('fixed');
-	    this.fixed = true;
+	    });
 	  }
 	
 	  this.board.grid[oldPos[0]][oldPos[1]] = ".";
@@ -358,31 +365,23 @@
 	  $div.css({top: top + 'px', left: left + 'px'});
 	};
 	
-	Square.prototype.squareDrop = function() {
-	  var oldPos = this.pos.slice();
-	  $('div[pos="'+ this.pos[0] + ',' + this.pos[1] +'"]').addClass('fixed');
-	  if (!this.fixed) {
-	    this.pos[0] += 1;
+	Square.prototype.checkFix = function () {
+	  var blockBelow = [this.pos[0] + 1, this.pos[1]];
+	  if (!this.board.validPos(blockBelow)) {
+	    $('div[pos="'+ this.pos[0] + ',' + this.pos[1] +'"]').addClass('fixed');
+	    this.fixed = true;
+	  } else if (this.board.grid[blockBelow[0]][blockBelow[1]] !== '.') {
+	    this.board.squares.forEach(function(square) {
+	      if (JSON.stringify(square.pos) === JSON.stringify(blockBelow)) {
+	        if (square.fixed) {
+	          $('div[pos="'+ this.pos[0] + ',' + this.pos[1] +'"]').addClass('fixed');
+	          this.fixed = true;
+	        }
+	      }
+	    }.bind(this));
 	  }
-	  if (this.pos[0] % 1 === 0){
-	    if (!this.board.checkPos([this.pos[0] + 1, this.pos[1]]) ||
-	        !this.board.validPos([this.pos[0] + 1, this.pos[1]])) {
-	      this.block.squares.forEach(function(square){
-	        square.active = false;
-	      }.bind(this));
-	      this.fixed = true;
-	    }
-	    this.board.grid[oldPos[0]][oldPos[1]] = ".";
-	    this.board.grid[this.pos[0]][this.pos[1]] = this.color;
-	  }
-	
-	  var $div = $('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]').attr('pos', this.pos);
-	
-	  var top = 60 * this.pos[0];
-	  var left = 60 * this.pos[1];
-	
-	  $div.css({top: top + 'px', left: left + 'px'});
 	};
+	
 	
 	module.exports = Square;
 
@@ -456,12 +455,14 @@
 	
 	      if (valid) {
 	        this.squares.forEach(function(square) {
-	          var oldPos = square.pos.slice();
-	          square.pos[1] -= 1;
-	          this.board.grid[oldPos[0]][oldPos[1]] = ".";
-	          this.board.grid[square.pos[0]][square.pos[1]] = square.color;
+	          if (square.active) {
+	            var oldPos = square.pos.slice();
+	            square.pos[1] -= 1;
+	            this.board.grid[oldPos[0]][oldPos[1]] = ".";
+	            this.board.grid[square.pos[0]][square.pos[1]] = square.color;
 	
-	          divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
+	            divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
+	          }
 	        }.bind(this));
 	
 	
@@ -481,18 +482,17 @@
 	          if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
 	              !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
 	            square.block.squares.forEach(function(otherSquare){
+	              setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
 	              otherSquare.active = false;
 	            });
-	            $('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');
-	            square.fixed = true;
 	          }
 	        });
 	      }
 	      break;
 	
 	    case 39:
-	      var valid = true;
-	      var divs = [];
+	      valid = true;
+	      divs = [];
 	      this.squares.forEach(function(square) {
 	        if (!this.board.validPos([square.pos[0], square.pos[1] + 1])
 	            || !this.board.checkPos([square.pos[0], square.pos[1] + 1 ])){
@@ -502,16 +502,18 @@
 	
 	      if (valid) {
 	        this.squares.forEach(function(square) {
-	          var oldPos = square.pos.slice();
-	          square.pos[1] += 1;
-	          this.board.grid[oldPos[0]][oldPos[1]] = ".";
-	          this.board.grid[square.pos[0]][square.pos[1]] = square.color;
+	          if (square.active) {
+	            var oldPos = square.pos.slice();
+	            square.pos[1] += 1;
+	            this.board.grid[oldPos[0]][oldPos[1]] = ".";
+	            this.board.grid[square.pos[0]][square.pos[1]] = square.color;
 	
-	          divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
+	            divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
+	          }
 	        }.bind(this));
 	
 	
-	        var i = 0;
+	        i = 0;
 	        this.squares.forEach(function(square, idx) {
 	          if (square.active) {
 	            divs[i].attr('pos', square.pos);
@@ -527,59 +529,20 @@
 	          if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
 	              !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
 	            square.block.squares.forEach(function(otherSquare){
+	              setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
 	              otherSquare.active = false;
 	            });
-	            $('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');
-	            square.fixed = true;
 	          }
 	        });
 	      }
 	      break;
 	
 	    case 40:
-	      var valid = true;
-	      var divs = [];
-	      this.squares.forEach(function(square) {
-	        if (!this.board.validPos([square.pos[0] + 1, square.pos[1]])
-	            || !this.board.checkPos([square.pos[0] + 1, square.pos[1]])){
-	            valid = false;
-	        }
-	      }.bind(this));
+	      this.squares.forEach(function(otherSquare){
+	        $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
+	        otherSquare.active = false;
+	      });
 	
-	      if (valid) {
-	        this.squares.forEach(function(square) {
-	          var oldPos = square.pos.slice();
-	          square.pos[0] += 1;
-	          this.board.grid[oldPos[0]][oldPos[1]] = ".";
-	          this.board.grid[square.pos[0]][square.pos[1]] = square.color;
-	
-	          divs.push($('div[pos="' + oldPos[0] + ',' + oldPos[1] + '"]'));
-	        }.bind(this));
-	
-	
-	        var i = 0;
-	        this.squares.forEach(function(square, idx) {
-	          if (square.active) {
-	            divs[i].attr('pos', square.pos);
-	            var top = 60 * square.pos[0];
-	            var left = 60 * square.pos[1];
-	
-	            divs[i].css({top: top + 'px', left: left + 'px'});
-	            i += 1;
-	          }
-	        });
-	
-	        this.squares.forEach(function(square) {
-	          if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
-	              !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
-	            square.block.squares.forEach(function(otherSquare){
-	              otherSquare.active = false;
-	            });
-	            $('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');
-	            square.fixed = true;
-	          }
-	        });
-	      }
 	      break;
 	
 	    case 68:
@@ -603,9 +566,11 @@
 	        }
 	        var newPos = [square.pos[0] + delta[0], square.pos[1] + delta[1]];
 	        divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
-	        square.pos = newPos;
-	        this.board.grid[newPos[0]][newPos[1]] = square.color;
-	
+	        if (square.active) {
+	          this.board.grid[square.pos[0]][square.pos[1]] = '.';
+	          square.pos = newPos;
+	          this.board.grid[newPos[0]][newPos[1]] = square.color;
+	        }
 	        j += 1;
 	      }.bind(this));
 	
@@ -622,18 +587,24 @@
 	          i += 1;
 	        }
 	      });
-	      var tempSquares = [];
 	
-	      tempSquares.push(this.squares[1]);
-	      tempSquares.push(this.squares[3]);
-	      tempSquares.push(this.squares[0]);
-	      tempSquares.push(this.squares[2]);
 	
+	      var tempSquares = [this.squares[1], this.squares[3], this.squares[0], this.squares[2]];
 	      this.squares = tempSquares;
+	
+	      this.squares.forEach(function(square) {
+	        if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
+	        !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
+	          square.block.squares.forEach(function(otherSquare){
+	            setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
+	            otherSquare.active = false;
+	          });
+	        }
+	      });
 	      break;
 	
 	    case 65:
-	      var j = 0;
+	      j = 0;
 	      divs = [];
 	      this.squares.forEach(function(square) {
 	        var delta;
@@ -653,9 +624,11 @@
 	        }
 	        var newPos = [square.pos[0] + delta[0], square.pos[1] + delta[1]];
 	        divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
-	        square.pos = newPos;
-	        this.board.grid[newPos[0]][newPos[1]] = square.color;
-	
+	        if (square.active) {
+	          this.board.grid[square.pos[0]][square.pos[1]] = '.';
+	          square.pos = newPos;
+	          this.board.grid[newPos[0]][newPos[1]] = square.color;
+	        }
 	        j += 1;
 	      }.bind(this));
 	
@@ -672,14 +645,19 @@
 	          i += 1;
 	        }
 	      });
-	      var tempSquares = [];
 	
-	      tempSquares.push(this.squares[2]);
-	      tempSquares.push(this.squares[0]);
-	      tempSquares.push(this.squares[3]);
-	      tempSquares.push(this.squares[1]);
-	
+	      var tempSquares = [this.squares[2], this.squares[0], this.squares[3], this.squares[1]];
 	      this.squares = tempSquares;
+	
+	      this.squares.forEach(function(square) {
+	        if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
+	            !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
+	          square.block.squares.forEach(function(otherSquare){
+	            setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
+	            otherSquare.active = false;
+	          });
+	        }
+	      });
 	      break;
 	
 	

@@ -7,8 +7,8 @@ var View = function($el) {
   this.setupGrid();
   this.keyBind();
   this.makeBlocks();
-  this.timer = -250;
-  this.intervalId = window.setInterval(this.step.bind(this), 250);
+  this.timer = 0;
+  this.intervalId = window.setInterval(this.step.bind(this), 100);
 };
 
 View.prototype.setupGrid = function(){
@@ -57,18 +57,14 @@ View.prototype.keyBind = function() {
   }.bind(this));
 };
 
-View.prototype.render = function () {
-
-};
-
 View.prototype.step = function() {
+
+  this.timer += 100;
+  this.board.squareStep();
+
   if (this.timer % 1000 === 0) {
     this.board.blockStep();
   }
-
-  this.timer += 250;
-  this.board.squareStep();
-  this.render();
 };
 
 module.exports = View;
