@@ -9,6 +9,9 @@ var Square = function(color, pos, board, block) {
 };
 
 Square.prototype.drop = function() {
+  if (this.pos[0] === 9 && !this.fixed) {
+    this.fixed = true;
+  }
   var oldPos = this.pos.slice();
   if (!this.fixed) {
     this.pos[0] += 1;

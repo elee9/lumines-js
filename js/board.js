@@ -80,17 +80,14 @@ Board.prototype.checkPos = function(pos) {
 };
 
 Board.prototype.blockStep = function() {
+  this.madeBlock = false;
 
-  var madeBlock = false;
-
-  if (!this.block.activeCheck()) {
-    this.lastBlock = $.extend({}, this.block);
-    this.addSquares(this.lastBlock.squares);
+  if (!this.block.activeCheck() || this.block.squares.length === 0) {
     this.makeBlock();
-    madeBlock = true;
+    this.madeBlock = true;
   }
 
-  if (!madeBlock) {
+  if (!this.madeBlock) {
     this.block.squares.forEach(function(square) { square.drop(); });
   }
 };
@@ -146,7 +143,7 @@ Board.prototype.findSquare = function(pos) {
   return result[0];
 };
 
-Board.prototype.squareStep = function() {
+Board.prototype.fixScan = function () {
   var notFixed = this.squares.filter(function(square) {
     return !square.fixed;
   });
@@ -154,6 +151,14 @@ Board.prototype.squareStep = function() {
   notFixed.forEach(function(square) {
     square.checkFix();
   });
+};
+
+Board.prototype.squareStep = function() {
+  if (!this.block.activeCheck()) {
+    this.lastBlock = $.extend({}, this.block);
+    this.addSquares(this.lastBlock.squares);
+    this.block.squares = [];
+  }
 
   if (typeof this.lastBlock === 'object') {
     if (this.lastBlock.fixedCheck()) {
@@ -166,7 +171,42 @@ Board.prototype.squareStep = function() {
     }
   }
 
+  if (this.freshlyMoved.length > 0) {
+    if (this.freshlyMoved.fixedCheck()) {
+      toCheck = this.freshlyMoved.slice();
+      skipCheck = this.freshlyMoved.slice();
+      while (toCheck.length) {
+        this.checkDelete(toCheck, skipCheck);
+      }
+      this.freshlyMoved = [];
+    }
+  }
+
   this.squares.forEach(function(square) { square.drop(); });
+};
+
+Board.prototype.deleteStep = function() {
+  var dupedSquares = this.squares.slice();
+  var unFix = [];
+  var counter = 0;
+  dupedSquares.forEach(function(square, idx) {
+    if (square.toDelete) {
+      unFix.push(square.pos[1]);
+      this.squares.splice(idx - counter, 1)[0];
+      $('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]').remove();
+      this.grid[square.pos[0]][square.pos[1]] = '.';
+      counter += 1;
+    }
+  }.bind(this));
+  this.freshlyMoved = [];
+  unFix.forEach(function(pos) {
+    this.squares.forEach(function(otherSquare) {
+      if (otherSquare.pos[1] === pos) {
+        this.freshlyMoved.push(otherSquare);
+        otherSquare.fixed = false;
+      }
+    });
+  }.bind(this));
 };
 
 Board.prototype.move = function(dir) {

@@ -150,12 +150,14 @@ Block.prototype.move = function(dir) {
         $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
         otherSquare.active = false;
       });
-
       break;
 
     case 68:
       var j = 0;
       divs = [];
+      if (this.squares.length === 0) {
+        break;
+      }
       this.squares.forEach(function(square) {
         var delta;
         switch(j) {
@@ -173,15 +175,14 @@ Block.prototype.move = function(dir) {
             break;
         }
         var newPos = [square.pos[0] + delta[0], square.pos[1] + delta[1]];
-        divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
         if (square.active) {
+          divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
           this.board.grid[square.pos[0]][square.pos[1]] = '.';
           square.pos = newPos;
           this.board.grid[newPos[0]][newPos[1]] = square.color;
         }
         j += 1;
       }.bind(this));
-
 
       i = 0;
 
@@ -196,10 +197,8 @@ Block.prototype.move = function(dir) {
         }
       });
 
-
       var tempSquares = [this.squares[1], this.squares[3], this.squares[0], this.squares[2]];
       this.squares = tempSquares;
-
       this.squares.forEach(function(square) {
         if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
         !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
@@ -214,6 +213,9 @@ Block.prototype.move = function(dir) {
     case 65:
       j = 0;
       divs = [];
+      if (this.squares.length === 0) {
+        break;
+      }
       this.squares.forEach(function(square) {
         var delta;
         switch(j) {
@@ -231,8 +233,8 @@ Block.prototype.move = function(dir) {
             break;
         }
         var newPos = [square.pos[0] + delta[0], square.pos[1] + delta[1]];
-        divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
         if (square.active) {
+          divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
           this.board.grid[square.pos[0]][square.pos[1]] = '.';
           square.pos = newPos;
           this.board.grid[newPos[0]][newPos[1]] = square.color;

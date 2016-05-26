@@ -66,7 +66,7 @@
 	  this.keyBind();
 	  this.makeBlocks();
 	  this.timer = 0;
-	  this.intervalId = window.setInterval(this.step.bind(this), 100);
+	  this.intervalId = window.setInterval(this.step.bind(this), 10);
 	};
 	
 	View.prototype.setupGrid = function(){
@@ -117,11 +117,20 @@
 	
 	View.prototype.step = function() {
 	
-	  this.timer += 100;
-	  this.board.squareStep();
+	  this.timer += 10;
+	  this.board.fixScan();
+	
+	  if (this.timer % 100 === 0)
+	  {
+	    this.board.squareStep();
+	  }
 	
 	  if (this.timer % 1000 === 0) {
 	    this.board.blockStep();
+	  }
+	
+	  if (this.timer % 5000 === 0) {
+	    this.board.deleteStep();
 	  }
 	};
 	
@@ -214,17 +223,14 @@
 	};
 	
 	Board.prototype.blockStep = function() {
+	  this.madeBlock = false;
 	
-	  var madeBlock = false;
-	
-	  if (!this.block.activeCheck()) {
-	    this.lastBlock = $.extend({}, this.block);
-	    this.addSquares(this.lastBlock.squares);
+	  if (!this.block.activeCheck() || this.block.squares.length === 0) {
 	    this.makeBlock();
-	    madeBlock = true;
+	    this.madeBlock = true;
 	  }
 	
-	  if (!madeBlock) {
+	  if (!this.madeBlock) {
 	    this.block.squares.forEach(function(square) { square.drop(); });
 	  }
 	};
@@ -280,7 +286,7 @@
 	  return result[0];
 	};
 	
-	Board.prototype.squareStep = function() {
+	Board.prototype.fixScan = function () {
 	  var notFixed = this.squares.filter(function(square) {
 	    return !square.fixed;
 	  });
@@ -288,6 +294,14 @@
 	  notFixed.forEach(function(square) {
 	    square.checkFix();
 	  });
+	};
+	
+	Board.prototype.squareStep = function() {
+	  if (!this.block.activeCheck()) {
+	    this.lastBlock = $.extend({}, this.block);
+	    this.addSquares(this.lastBlock.squares);
+	    this.block.squares = [];
+	  }
 	
 	  if (typeof this.lastBlock === 'object') {
 	    if (this.lastBlock.fixedCheck()) {
@@ -301,6 +315,28 @@
 	  }
 	
 	  this.squares.forEach(function(square) { square.drop(); });
+	};
+	
+	Board.prototype.deleteStep = function() {
+	  var dupedSquares = this.squares.slice();
+	  var unFix = [];
+	  var counter = 0;
+	  dupedSquares.forEach(function(square, idx) {
+	    if (square.toDelete) {
+	      unFix.push(square.pos[1]);
+	      this.squares.splice(idx - counter, 1)[0];
+	      $('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]').remove();
+	      this.grid[square.pos[0]][square.pos[1]] = '.';
+	      counter += 1;
+	    }
+	  }.bind(this));
+	  unFix.forEach(function(pos) {
+	    this.squares.forEach(function(otherSquare) {
+	      if (otherSquare.pos[1] === pos) {
+	        otherSquare.fixed = false;
+	      }
+	    });
+	  }.bind(this));
 	};
 	
 	Board.prototype.move = function(dir) {
@@ -341,6 +377,9 @@
 	};
 	
 	Square.prototype.drop = function() {
+	  if (this.pos[0] === 9 && !this.fixed) {
+	    this.fixed = true;
+	  }
 	  var oldPos = this.pos.slice();
 	  if (!this.fixed) {
 	    this.pos[0] += 1;
@@ -542,12 +581,14 @@
 	        $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
 	        otherSquare.active = false;
 	      });
-	
 	      break;
 	
 	    case 68:
 	      var j = 0;
 	      divs = [];
+	      if (this.squares.length === 0) {
+	        break;
+	      }
 	      this.squares.forEach(function(square) {
 	        var delta;
 	        switch(j) {
@@ -565,15 +606,14 @@
 	            break;
 	        }
 	        var newPos = [square.pos[0] + delta[0], square.pos[1] + delta[1]];
-	        divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
 	        if (square.active) {
+	          divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
 	          this.board.grid[square.pos[0]][square.pos[1]] = '.';
 	          square.pos = newPos;
 	          this.board.grid[newPos[0]][newPos[1]] = square.color;
 	        }
 	        j += 1;
 	      }.bind(this));
-	
 	
 	      i = 0;
 	
@@ -588,10 +628,8 @@
 	        }
 	      });
 	
-	
 	      var tempSquares = [this.squares[1], this.squares[3], this.squares[0], this.squares[2]];
 	      this.squares = tempSquares;
-	
 	      this.squares.forEach(function(square) {
 	        if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
 	        !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
@@ -606,6 +644,9 @@
 	    case 65:
 	      j = 0;
 	      divs = [];
+	      if (this.squares.length === 0) {
+	        break;
+	      }
 	      this.squares.forEach(function(square) {
 	        var delta;
 	        switch(j) {
@@ -623,8 +664,8 @@
 	            break;
 	        }
 	        var newPos = [square.pos[0] + delta[0], square.pos[1] + delta[1]];
-	        divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
 	        if (square.active) {
+	          divs.push($('div[pos="' + square.pos[0] + ',' + square.pos[1] + '"]'));
 	          this.board.grid[square.pos[0]][square.pos[1]] = '.';
 	          square.pos = newPos;
 	          this.board.grid[newPos[0]][newPos[1]] = square.color;

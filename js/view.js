@@ -8,7 +8,7 @@ var View = function($el) {
   this.keyBind();
   this.makeBlocks();
   this.timer = 0;
-  this.intervalId = window.setInterval(this.step.bind(this), 100);
+  this.intervalId = window.setInterval(this.step.bind(this), 10);
 };
 
 View.prototype.setupGrid = function(){
@@ -59,11 +59,20 @@ View.prototype.keyBind = function() {
 
 View.prototype.step = function() {
 
-  this.timer += 100;
-  this.board.squareStep();
+  this.timer += 10;
+  this.board.fixScan();
+
+  if (this.timer % 100 === 0)
+  {
+    this.board.squareStep();
+  }
 
   if (this.timer % 1000 === 0) {
     this.board.blockStep();
+  }
+
+  if (this.timer % 5000 === 0) {
+    this.board.deleteStep();
   }
 };
 
