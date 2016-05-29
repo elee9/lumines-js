@@ -39,16 +39,6 @@ Block.prototype.activeCheck = function () {
   return active;
 };
 
-Block.prototype.fixedCheck = function() {
-  var allFixed = true;
-  this.squares.forEach(function(square) {
-    if (!square.fixed) {
-      allFixed = false;
-    }
-  });
-  return allFixed;
-};
-
 Block.prototype.move = function(dir) {
   switch(dir) {
     case 37:
@@ -89,8 +79,9 @@ Block.prototype.move = function(dir) {
         this.squares.forEach(function(square) {
           if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
               !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
+            square.fixed = true;
             square.block.squares.forEach(function(otherSquare){
-              setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
+              $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
               otherSquare.active = false;
             });
           }
@@ -136,8 +127,9 @@ Block.prototype.move = function(dir) {
         this.squares.forEach(function(square) {
           if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
               !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
+            square.fixed = true;
             square.block.squares.forEach(function(otherSquare){
-              setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
+              $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
               otherSquare.active = false;
             });
           }
@@ -149,7 +141,7 @@ Block.prototype.move = function(dir) {
       this.squares.forEach(function(otherSquare){
         $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
         otherSquare.active = false;
-      });
+      }.bind(this));
       break;
 
     case 68:
@@ -269,11 +261,7 @@ Block.prototype.move = function(dir) {
         }
       });
       break;
-
-
     }
-
-
 };
 
 module.exports = Block;

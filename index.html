@@ -5,13 +5,36 @@
     <title>Lumines</title>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+        <link href='https://fonts.googleapis.com/css?family=Karla:400,700' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" href="./css/lumines.css" charset="utf-8">
         <script src="js/bundle.js"></script>
 
   </head>
   <body>
-    <h1>Lumines</h1>
-
-    <figure class="lumines-game"></figure>
+      <div class="overlay"></div>
+      <div class="instructions">
+        <div class="textbox">
+          <span class="instructiontitle"><strong>Instructions</strong></span>
+          <span>[←][ ↑ ][ ↓ ][→] to manipulate the block</span>
+          <span>[ ↓ ] drops the block all the way down</span>
+          <span>[D] and [A] to rotate clockwise/counterclockwise</span>
+          <span>Try to get blocks of 4 of the same color</span>
+          <span>Don't let them reach the top!</span>
+          <br/>
+          <span>Press [ENTER] to start!</span>
+        </div>
+      </div>
+      <div class="gameover">
+        <div class="textbox">
+          <span class="gameovertext"><strong>GAME OVER</strong></span>
+          <span class="score"></span>
+          <br/>
+          <span>Press [ENTER] to start a new game!</span>
+        </div>
+      </div>
+      <div class="game">
+      <h1 class="title">Lumines</h1>
+      <figure class="lumines-game"></figure>
+    </div>
   </body>
 </html>

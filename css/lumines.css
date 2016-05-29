@@ -2,8 +2,12 @@ html, body, figure, ul, li, h1 {
   margin: 0;
   padding: 0;
   border: 0;
-  font: inherit;
+  font-family: 'Karla', sans-serif;
   text-align: inherit;
+}
+
+html {
+  background: #333;
 }
 
 h1{
@@ -28,7 +32,7 @@ li {
   z-index: -1;
 }
 
-div {
+.square {
   width: 60px;
   height: 60px;
   position: absolute;
@@ -41,8 +45,15 @@ div {
 }
 
 .gameover {
-  background: transparent;
-  outline: none;
+  display: none;
+  color: white;
+  z-index: 100;
+  flex-direction: column;
+  width: 100vw;
+  justify-content: center;
+  height: 100vh;
+  align-items: center;
+  position: absolute;
 }
 
 .cf:after {
@@ -65,8 +76,171 @@ div {
   transition: all 0.1s linear;
 }
 
-.delete {
-  border: 3px solid white;
+.square-dark.delete {
+  border: 6px solid white;
   opacity: 0.7;
   box-sizing: border-box;
+}
+
+.square-light.delete {
+  background: grey;
+  border: 6px solid white;
+  opacity: 0.7;
+  box-sizing: border-box;
+}
+
+.title {
+  font-size: 72px;
+  margin-bottom: 50px;
+  color: white;
+}
+
+.instructions {
+  color: white;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  justify-content: center;
+  height: 100vh;
+  align-items: center;
+  position: absolute;
+}
+
+.overlay {
+  width: 100vw;
+  height: 100vh;
+  background: black;
+  opacity: 0.6;
+  z-index: 99;
+  position: absolute;
+}
+
+.instructiontitle, .gameovertext {
+  margin-bottom: 5px;
+  font-size: 36px;
+}
+
+.score {
+  padding-top: 5px;
+}
+
+.textbox {
+  background: #656363;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  border: 10px solid #474747;
+}
+
+span {
+  text-shadow: 1px 1px black;
+}
+
+.game {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scanline {
+  height: 480px;
+  background: white;
+  width: 3px;
+  top: 120px;
+  position: absolute;
+  left: 0px;
+}
+
+.scan {
+  -webkit-animation: motionblur 2s ease-in-out infinite;
+  animation: motionblur 2s ease-in-out infinite;
+}
+
+
+
+@-webkit-keyframes motionblur {
+  0%
+  {
+    left: 0;
+    text-shadow: 0 0 0 rgba(255,255,255,0);
+    box-shadow: 0 0 0 rgba(200,0,0,0);
+  }
+  5%
+  {
+    left: 0;
+  }
+  25%
+  {
+    text-shadow: -5px 0 5px rgba(255,255,255,1);
+    box-shadow: -15px 0 10px -5px rgba(200,0,0,0.5);
+  }
+  50%
+  {
+    left: 960px;
+    text-shadow: 0 0 0 rgba(255,255,255,0);
+    box-shadow: 0 0 0 rgba(200,0,0,0);
+  }
+  55%
+  {
+    left: 960px;
+  }
+  75%
+  {
+    text-shadow: 5px 0 5px rgba(255,255,255,1);
+    box-shadow: 15px 0 10px -5px rgba(200,0,0,0.5);
+  }
+	100%
+  {
+    left: 0px;
+    text-shadow: 0 0 0 rgba(255,255,255,0);
+    box-shadow: 0 0 0 rgba(200,0,0,0);
+  }
+}
+
+@keyframes motionblur {
+  0%
+  {
+    left: 0;
+    text-shadow: 0 0 0 rgba(255,255,255,0);
+    box-shadow: 0 0 0 rgba(200,0,0,0);
+  }
+  5%
+  {
+    left: 0;
+    transform-origin: 0 0;
+  }
+  25%
+  {
+    text-shadow: -5px 0 5px rgba(255,255,255,1);
+    box-shadow: -15px 0 10px -5px rgba(200,0,0,0.5);
+
+  }
+  50%
+  {
+    left: 960px;
+    text-shadow: 0 0 0 rgba(255,255,255,0);
+    box-shadow: 0 0 0 rgba(200,0,0,0);
+
+  }
+  55%
+  {
+    left: 960px;
+    transform-origin: 100% 0;
+
+  }
+  75%
+  {
+    text-shadow: 5px 0 5px rgba(255,255,255,1);
+    box-shadow: 15px 0 10px -5px rgba(200,0,0,0.5);
+  }
+	100%
+  {
+    left: 0px;
+    text-shadow: 0 0 0 rgba(255,255,255,0);
+    box-shadow: 0 0 0 rgba(200,0,0,0);
+  }
 }

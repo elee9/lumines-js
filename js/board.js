@@ -9,6 +9,9 @@ var Board = function() {
   this.makeGrid();
   this.block = new Block(this);
   this.lastBlock = "placeholder";
+  this.freshlyMoved = [];
+  this.makeBlockCheck = false;
+  this.score = 0;
 };
 
 Board.BLANK_SYMBOL = '.';
@@ -55,7 +58,7 @@ Board.prototype.makeBlock = function () {
   });
   this.block.squares.forEach(function(square){
     var pos = square.pos;
-    $('div[pos="' + pos[0] + ',' + pos[1] + '"]').addClass("square-" + square.color);
+    $('div[pos="' + pos[0] + ',' + pos[1] + '"]').addClass("square square-" + square.color);
   });
 };
 
@@ -80,13 +83,6 @@ Board.prototype.checkPos = function(pos) {
 };
 
 Board.prototype.blockStep = function() {
-  this.madeBlock = false;
-
-  if (!this.block.activeCheck() || this.block.squares.length === 0) {
-    this.makeBlock();
-    this.madeBlock = true;
-  }
-
   if (!this.madeBlock) {
     this.block.squares.forEach(function(square) { square.drop(); });
   }
@@ -97,7 +93,7 @@ Board.prototype.checkDelete = function(queue, skip) {
   var currentRow = current.pos[0];
   var currentColumn = current.pos[1];
   Board.DELTAS.forEach(function(delta) {
-    if ((currentRow === 9 && delta[0][0] === 1) || (currentColumn === 0 && delta[1][1] === -1) ||
+    if ((currentRow === 0 && delta[0][0] === -1 || currentRow === 9 && delta[0][0] === 1) || (currentColumn === 0 && delta[1][1] === -1) ||
         (currentColumn === 15 && delta[1][1] === 1))   {
       return;
     }
@@ -161,7 +157,8 @@ Board.prototype.squareStep = function() {
   }
 
   if (typeof this.lastBlock === 'object') {
-    if (this.lastBlock.fixedCheck()) {
+    if (fixedCheck(this.lastBlock.squares)) {
+      this.makeBlockCheck = true;
       var toCheck = this.lastBlock.squares.slice();
       var skipCheck = this.lastBlock.squares.slice();
       while (toCheck.length) {
@@ -171,8 +168,17 @@ Board.prototype.squareStep = function() {
     }
   }
 
+  this.madeBlock = false;
+  if (!this.gameOver()) {
+    if (this.makeBlockCheck) {
+      this.makeBlock();
+      this.makeBlockCheck = false;
+      this.madeBlock = true;
+    }
+  }
+
   if (this.freshlyMoved.length > 0) {
-    if (this.freshlyMoved.fixedCheck()) {
+    if (fixedCheck(this.freshlyMoved)) {
       toCheck = this.freshlyMoved.slice();
       skipCheck = this.freshlyMoved.slice();
       while (toCheck.length) {
@@ -198,14 +204,14 @@ Board.prototype.deleteStep = function() {
       counter += 1;
     }
   }.bind(this));
-  this.freshlyMoved = [];
+  this.score += 20 * counter;
   unFix.forEach(function(pos) {
     this.squares.forEach(function(otherSquare) {
       if (otherSquare.pos[1] === pos) {
         this.freshlyMoved.push(otherSquare);
         otherSquare.fixed = false;
       }
-    });
+    }.bind(this));
   }.bind(this));
 };
 
@@ -227,6 +233,29 @@ Board.prototype.move = function(dir) {
       this.block.move(dir);
       break;
   }
+};
+
+Board.prototype.moveLine = function () {
+  $('.scanline').addClass("scan");
+  setTimeout(function() { $('.scanline').removeClass("scan"); }, 2000);
+};
+
+var fixedCheck = function(squares) {
+  var allFixed = true;
+  squares.forEach(function(square) {
+    if (!square.fixed) {
+      allFixed = false;
+    }
+  });
+  return allFixed;
+};
+
+Board.prototype.gameOver = function () {
+  return this.squares.some(function(square) {
+    if (square.fixed) {
+      return (square.pos[0] === 1 || square.pos[0] === 0);
+    }
+  });
 };
 
 module.exports = Board;

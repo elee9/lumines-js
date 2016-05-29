@@ -5,10 +5,36 @@ var View = function($el) {
   this.$el = $el;
   this.board = new Board();
   this.setupGrid();
-  this.keyBind();
   this.makeBlocks();
+  this.bindStart();
   this.timer = 0;
-  this.intervalId = window.setInterval(this.step.bind(this), 10);
+  this.gameIsStarted = false;
+};
+
+View.prototype.start = function () {
+  if (!this.gameIsStarted) {
+    $('.overlay').css("display", "none");
+    $('.instructions').css("display","none");
+    this.keyBind();
+    this.gameIsStarted = true;
+    this.intervalId = window.setInterval(this.step.bind(this), 10);
+  } else {
+    $('.gameover').css("display", "none");
+    $('.overlay').css("display", "none");
+    this.board = new Board();
+    $('#squares').empty();
+    this. makeBlocks();
+    this.timer = 0;
+    this.intervalId = window.setInterval(this.step.bind(this), 10);
+  }
+};
+
+View.prototype.bindStart = function () {
+  $(window).on('keydown', function(event){
+    if (event.which === 13) {
+      this.start();
+    }
+  }.bind(this));
 };
 
 View.prototype.setupGrid = function(){
@@ -16,6 +42,8 @@ View.prototype.setupGrid = function(){
   $ul.addClass('cf');
   this.$el.append($ul);
   var $div = $('<div>');
+  var $scanline = $('<div>').addClass("scanline");
+  $ul.append($scanline);
   $div.attr('id', 'squares');
   $ul.append($div);
   for(var i = 0; i < this.board.dimY; i++){
@@ -46,7 +74,7 @@ View.prototype.makeBlocks = function() {
   });
   this.board.block.squares.forEach(function(square){
     var pos = square.pos;
-    $('div[pos="' + pos[0] + ',' + pos[1] + '"]').addClass("square-" + square.color);
+    $('div[pos="' + pos[0] + ',' + pos[1] + '"]').addClass("square square-" + square.color);
   });
 
 };
@@ -62,17 +90,29 @@ View.prototype.step = function() {
   this.timer += 10;
   this.board.fixScan();
 
-  if (this.timer % 100 === 0)
-  {
-    this.board.squareStep();
-  }
+  if (this.board.gameOver()) {
+    window.clearInterval(this.intervalId);
+    $('.score')[0].innerHTML = "Score: " + this.board.score;
+    $('.gameover').css("display","flex");
+    $('.overlay').css("display","flex");
+  } else {
+    if (this.timer % 50 === 0)
+    {
+      if (this.board.gameOver()) {
+        console.log('test');
+      }
+      this.board.squareStep();
+    }
 
-  if (this.timer % 1000 === 0) {
-    this.board.blockStep();
-  }
+    if (this.timer % 1500 === 0) {
+      this.board.blockStep();
+    }
 
-  if (this.timer % 5000 === 0) {
-    this.board.deleteStep();
+    if (this.timer % 5000 === 0) {
+      this.board.moveLine();
+      setTimeout(function() { this.board.deleteStep(); }.bind(this), 1000);
+      setTimeout(function() { this.board.deleteStep(); }.bind(this), 2000);
+    }
   }
 };
 

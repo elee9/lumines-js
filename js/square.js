@@ -13,16 +13,18 @@ Square.prototype.drop = function() {
     this.fixed = true;
   }
   var oldPos = this.pos.slice();
-  if (!this.fixed) {
-    this.pos[0] += 1;
-  }
 
   if (!this.board.checkPos([this.pos[0] + 1, this.pos[1]]) ||
       !this.board.validPos([this.pos[0] + 1, this.pos[1]])) {
+    this.fixed = true;
     this.block.squares.forEach(function(square){
-      setTimeout(function() {$('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');}, 550);
+      $('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');
       square.active = false;
     });
+  }
+
+  if (!this.fixed) {
+    this.pos[0] += 1;
   }
 
   this.board.grid[oldPos[0]][oldPos[1]] = ".";

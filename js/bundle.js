@@ -63,10 +63,36 @@
 	  this.$el = $el;
 	  this.board = new Board();
 	  this.setupGrid();
-	  this.keyBind();
 	  this.makeBlocks();
+	  this.bindStart();
 	  this.timer = 0;
-	  this.intervalId = window.setInterval(this.step.bind(this), 10);
+	  this.gameIsStarted = false;
+	};
+	
+	View.prototype.start = function () {
+	  if (!this.gameIsStarted) {
+	    $('.overlay').css("display", "none");
+	    $('.instructions').css("display","none");
+	    this.keyBind();
+	    this.gameIsStarted = true;
+	    this.intervalId = window.setInterval(this.step.bind(this), 10);
+	  } else {
+	    $('.gameover').css("display", "none");
+	    $('.overlay').css("display", "none");
+	    this.board = new Board();
+	    $('#squares').empty();
+	    this. makeBlocks();
+	    this.timer = 0;
+	    this.intervalId = window.setInterval(this.step.bind(this), 10);
+	  }
+	};
+	
+	View.prototype.bindStart = function () {
+	  $(window).on('keydown', function(event){
+	    if (event.which === 13) {
+	      this.start();
+	    }
+	  }.bind(this));
 	};
 	
 	View.prototype.setupGrid = function(){
@@ -74,6 +100,8 @@
 	  $ul.addClass('cf');
 	  this.$el.append($ul);
 	  var $div = $('<div>');
+	  var $scanline = $('<div>').addClass("scanline");
+	  $ul.append($scanline);
 	  $div.attr('id', 'squares');
 	  $ul.append($div);
 	  for(var i = 0; i < this.board.dimY; i++){
@@ -104,7 +132,7 @@
 	  });
 	  this.board.block.squares.forEach(function(square){
 	    var pos = square.pos;
-	    $('div[pos="' + pos[0] + ',' + pos[1] + '"]').addClass("square-" + square.color);
+	    $('div[pos="' + pos[0] + ',' + pos[1] + '"]').addClass("square square-" + square.color);
 	  });
 	
 	};
@@ -120,17 +148,29 @@
 	  this.timer += 10;
 	  this.board.fixScan();
 	
-	  if (this.timer % 100 === 0)
-	  {
-	    this.board.squareStep();
-	  }
+	  if (this.board.gameOver()) {
+	    window.clearInterval(this.intervalId);
+	    $('.score')[0].innerHTML = "Score: " + this.board.score;
+	    $('.gameover').css("display","flex");
+	    $('.overlay').css("display","flex");
+	  } else {
+	    if (this.timer % 50 === 0)
+	    {
+	      if (this.board.gameOver()) {
+	        console.log('test');
+	      }
+	      this.board.squareStep();
+	    }
 	
-	  if (this.timer % 1000 === 0) {
-	    this.board.blockStep();
-	  }
+	    if (this.timer % 1500 === 0) {
+	      this.board.blockStep();
+	    }
 	
-	  if (this.timer % 5000 === 0) {
-	    this.board.deleteStep();
+	    if (this.timer % 5000 === 0) {
+	      this.board.moveLine();
+	      setTimeout(function() { this.board.deleteStep(); }.bind(this), 1000);
+	      setTimeout(function() { this.board.deleteStep(); }.bind(this), 2000);
+	    }
 	  }
 	};
 	
@@ -152,6 +192,9 @@
 	  this.makeGrid();
 	  this.block = new Block(this);
 	  this.lastBlock = "placeholder";
+	  this.freshlyMoved = [];
+	  this.makeBlockCheck = false;
+	  this.score = 0;
 	};
 	
 	Board.BLANK_SYMBOL = '.';
@@ -198,7 +241,7 @@
 	  });
 	  this.block.squares.forEach(function(square){
 	    var pos = square.pos;
-	    $('div[pos="' + pos[0] + ',' + pos[1] + '"]').addClass("square-" + square.color);
+	    $('div[pos="' + pos[0] + ',' + pos[1] + '"]').addClass("square square-" + square.color);
 	  });
 	};
 	
@@ -223,13 +266,6 @@
 	};
 	
 	Board.prototype.blockStep = function() {
-	  this.madeBlock = false;
-	
-	  if (!this.block.activeCheck() || this.block.squares.length === 0) {
-	    this.makeBlock();
-	    this.madeBlock = true;
-	  }
-	
 	  if (!this.madeBlock) {
 	    this.block.squares.forEach(function(square) { square.drop(); });
 	  }
@@ -240,7 +276,7 @@
 	  var currentRow = current.pos[0];
 	  var currentColumn = current.pos[1];
 	  Board.DELTAS.forEach(function(delta) {
-	    if ((currentRow === 9 && delta[0][0] === 1) || (currentColumn === 0 && delta[1][1] === -1) ||
+	    if ((currentRow === 0 && delta[0][0] === -1 || currentRow === 9 && delta[0][0] === 1) || (currentColumn === 0 && delta[1][1] === -1) ||
 	        (currentColumn === 15 && delta[1][1] === 1))   {
 	      return;
 	    }
@@ -304,13 +340,34 @@
 	  }
 	
 	  if (typeof this.lastBlock === 'object') {
-	    if (this.lastBlock.fixedCheck()) {
+	    if (fixedCheck(this.lastBlock.squares)) {
+	      this.makeBlockCheck = true;
 	      var toCheck = this.lastBlock.squares.slice();
 	      var skipCheck = this.lastBlock.squares.slice();
 	      while (toCheck.length) {
 	        this.checkDelete(toCheck, skipCheck);
 	      }
 	      this.lastBlock = "placeholder";
+	    }
+	  }
+	
+	  this.madeBlock = false;
+	  if (!this.gameOver()) {
+	    if (this.makeBlockCheck) {
+	      this.makeBlock();
+	      this.makeBlockCheck = false;
+	      this.madeBlock = true;
+	    }
+	  }
+	
+	  if (this.freshlyMoved.length > 0) {
+	    if (fixedCheck(this.freshlyMoved)) {
+	      toCheck = this.freshlyMoved.slice();
+	      skipCheck = this.freshlyMoved.slice();
+	      while (toCheck.length) {
+	        this.checkDelete(toCheck, skipCheck);
+	      }
+	      this.freshlyMoved = [];
 	    }
 	  }
 	
@@ -330,12 +387,14 @@
 	      counter += 1;
 	    }
 	  }.bind(this));
+	  this.score += 20 * counter;
 	  unFix.forEach(function(pos) {
 	    this.squares.forEach(function(otherSquare) {
 	      if (otherSquare.pos[1] === pos) {
+	        this.freshlyMoved.push(otherSquare);
 	        otherSquare.fixed = false;
 	      }
-	    });
+	    }.bind(this));
 	  }.bind(this));
 	};
 	
@@ -357,6 +416,29 @@
 	      this.block.move(dir);
 	      break;
 	  }
+	};
+	
+	Board.prototype.moveLine = function () {
+	  $('.scanline').addClass("scan");
+	  setTimeout(function() { $('.scanline').removeClass("scan"); }, 2000);
+	};
+	
+	var fixedCheck = function(squares) {
+	  var allFixed = true;
+	  squares.forEach(function(square) {
+	    if (!square.fixed) {
+	      allFixed = false;
+	    }
+	  });
+	  return allFixed;
+	};
+	
+	Board.prototype.gameOver = function () {
+	  return this.squares.some(function(square) {
+	    if (square.fixed) {
+	      return (square.pos[0] === 1 || square.pos[0] === 0);
+	    }
+	  });
 	};
 	
 	module.exports = Board;
@@ -381,16 +463,18 @@
 	    this.fixed = true;
 	  }
 	  var oldPos = this.pos.slice();
-	  if (!this.fixed) {
-	    this.pos[0] += 1;
-	  }
 	
 	  if (!this.board.checkPos([this.pos[0] + 1, this.pos[1]]) ||
 	      !this.board.validPos([this.pos[0] + 1, this.pos[1]])) {
+	    this.fixed = true;
 	    this.block.squares.forEach(function(square){
-	      setTimeout(function() {$('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');}, 550);
+	      $('div[pos="'+ square.pos[0] + ',' + square.pos[1] +'"]').addClass('fixed');
 	      square.active = false;
 	    });
+	  }
+	
+	  if (!this.fixed) {
+	    this.pos[0] += 1;
 	  }
 	
 	  this.board.grid[oldPos[0]][oldPos[1]] = ".";
@@ -470,16 +554,6 @@
 	  return active;
 	};
 	
-	Block.prototype.fixedCheck = function() {
-	  var allFixed = true;
-	  this.squares.forEach(function(square) {
-	    if (!square.fixed) {
-	      allFixed = false;
-	    }
-	  });
-	  return allFixed;
-	};
-	
 	Block.prototype.move = function(dir) {
 	  switch(dir) {
 	    case 37:
@@ -520,8 +594,9 @@
 	        this.squares.forEach(function(square) {
 	          if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
 	              !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
+	            square.fixed = true;
 	            square.block.squares.forEach(function(otherSquare){
-	              setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
+	              $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
 	              otherSquare.active = false;
 	            });
 	          }
@@ -567,8 +642,9 @@
 	        this.squares.forEach(function(square) {
 	          if (!square.board.checkPos([square.pos[0] + 1, square.pos[1]]) ||
 	              !square.board.validPos([square.pos[0] + 1, square.pos[1]])) {
+	            square.fixed = true;
 	            square.block.squares.forEach(function(otherSquare){
-	              setTimeout(function() {$('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');}, 550);
+	              $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
 	              otherSquare.active = false;
 	            });
 	          }
@@ -580,7 +656,7 @@
 	      this.squares.forEach(function(otherSquare){
 	        $('div[pos="'+ otherSquare.pos[0] + ',' + otherSquare.pos[1] +'"]').addClass('fixed');
 	        otherSquare.active = false;
-	      });
+	      }.bind(this));
 	      break;
 	
 	    case 68:
@@ -700,11 +776,7 @@
 	        }
 	      });
 	      break;
-	
-	
 	    }
-	
-	
 	};
 	
 	module.exports = Block;
