@@ -19,6 +19,7 @@ View.prototype.start = function () {
     this.gameIsStarted = true;
     this.intervalId = window.setInterval(this.step.bind(this), 10);
   } else {
+    clearInterval(this.intervalId);
     $('.gameover').css("display", "none");
     $('.overlay').css("display", "none");
     this.board = new Board();
